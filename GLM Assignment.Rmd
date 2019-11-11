@@ -1,0 +1,96 @@
+---
+title: "GLM Assignment"
+author: "Mike Swofford"
+date: "11/9/2019"
+output: html_document
+# GLM Assignment
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#options(scipen = 999)
+```
+
+```{r packages, echo=FALSE, include=FALSE}
+library(tidyverse)
+```
+
+
+
+```{r data, echo=FALSE, include=FALSE}
+# Import of dataset file
+telework <- read_csv("Telework.csv")
+```
+
+
+```{r clean, echo=FALSE, include=FALSE}
+# Cleaning of data
+
+# Change state variable to a factor
+cols <- c("state", "rent_or_own_home", "type_of_home", "education",
+          "marital_status", "sex", "citizenship", "full_or_part_time", 
+          "hourly_non_hourly", "union_member", "geography_region",
+          "hispanic", "industry", "occupation_group", "detailed_industry", 
+          "detailed_occupation_group", "metropolitan", "msa_size", "race",
+          "occupation_code", "csa_code", "msa_code", "telecommute")
+telework[cols] <- lapply(telework[cols], factor)
+```
+
+## Question 1: Telecommuting and Income
+
+First, we will look at a model of weekly earnings (income) as it directly 
+relates to whether someone telecommutes or not.
+
+A simple one-way ANOVA provides these results:
+
+```{r q1_anova, echo=FALSE}
+# Question 1: ANOVA to measure weekly earnings as telecommute changes
+q1 <- aov(weekly_earnings~as.factor(telecommute), data = telework)
+q1_result <- summary(q1)
+print(q1_result)
+```
+This model suggests that whether or not someone telecommutes has an impact on 
+their income. The resulting p-value, being less than 2e-16, tells us that, given
+the confidence level of 95%, there is good certainty that the dependent 
+variable here, weekly earnings, is affected by the status of the dependent 
+variable, the boolean telecommute.
+
+A boxplot gives graphical represenation that the range of income for those that
+telecommute is higher than the range of those that do not:
+
+```{r q1_plot, echo = FALSE}
+
+telework %>%
+  ggplot(aes(y=weekly_earnings, x=(telecommute))) +
+  geom_boxplot()
+```
+
+
+However, this should be considered a naive model for a couple of reasons:
+
+1) Correlation between the variables should not imply causation. Logically, the
+act of telecommuting is likely not in itself a driver of higher income. 
+2) There may be other mediating variables in the data that give the appearance
+of influence between these two selected variables. In this case, what is
+more likely is that the type of occupation one has where telecommuting is an
+option may drive higher income. 
+
+## Question 2: Telecommuting, Income, and Full or Part-Time Status
+
+```{r q2_anova, echo = FALSE}
+# Question 2: Two-way ANOVA to measure weekly earnings as telecommute and 
+# occupation type changes.
+
+q2 <- aov(weekly_earnings~telecommute+full_or_part_time, 
+          data = telework)
+summary(q2)
+TukeyHSD((q2))
+
+telework %>%
+  ggplot(aes(y=weekly_earnings, x=as.factor(full_or_part_time))) +
+  geom_boxplot()
+
+
+```
+
+
