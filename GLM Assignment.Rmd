@@ -77,6 +77,11 @@ option may drive higher income.
 
 ## Question 2: Telecommuting, Income, and Full or Part-Time Status
 
+A second model includes full or part-time status as a variable in addition to 
+the telecommute status.
+
+A two-way ANOVA gives these results:
+
 ```{r q2_anova, echo = FALSE}
 # Question 2: Two-way ANOVA to measure weekly earnings as telecommute and 
 # occupation type changes.
@@ -84,13 +89,30 @@ option may drive higher income.
 q2 <- aov(weekly_earnings~telecommute+full_or_part_time, 
           data = telework)
 summary(q2)
-TukeyHSD((q2))
+```
+In this model, both variables show significance, as the p-values in the above 
+results are both very low. I.e. both telecommute status and full or part-time 
+status show a correlation to income. 
+
+There is logic to this model, as one would assume that holding full-time 
+employment would have a direct influence on an increase in income, while a 
+part-time worker would likely have a compartively lower income. 
+
+Concerning the telecommute status, however, there may still be some correllation
+to income, but this is likely mediated by the full-time/part-time status
+variable. If that is the case, then this model still shows some naievety as
+there is multicollinearity between the variables.
+
+A boxplot of this model shows the similarities in the range variancess for
+those that telecommute and those that do not. While weekly earning are higher
+for full-time workers that telecommute, the similar dynamic between the ranges
+of the two telecommute categories is apparent:
+
+```{r q2_plot, echo = FALSE}
 
 telework %>%
-  ggplot(aes(y=weekly_earnings, x=as.factor(full_or_part_time))) +
-  geom_boxplot()
-
-
+  ggplot(aes(y=weekly_earnings, x=as.factor(telecommute))) +
+  geom_boxplot() + aes(fill = full_or_part_time)
 ```
 
-
+## Question 3: 
