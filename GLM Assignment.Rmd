@@ -16,12 +16,10 @@ library(tidyverse)
 ```
 
 
-
 ```{r data, echo=FALSE, include=FALSE}
 # Import of dataset file
 telework <- read_csv("Telework.csv")
 ```
-
 
 ```{r clean, echo=FALSE, include=FALSE}
 # Cleaning of data
@@ -39,13 +37,13 @@ telework[cols] <- lapply(telework[cols], factor)
 ## Question 1: Telecommuting and Income
 
 First, we will look at a model of weekly earnings (income) as it directly 
-relates to whether someone telecommutes or not.
+relates to whether someone telecommutes or not. 
 
 A simple one-way ANOVA provides these results:
 
 ```{r q1_anova, echo=FALSE}
 # Question 1: ANOVA to measure weekly earnings as telecommute changes
-q1 <- aov(weekly_earnings~as.factor(telecommute), data = telework)
+q1 <- aov(weekly_earnings~telecommute, data = telework)
 q1_result <- summary(q1)
 print(q1_result)
 ```
@@ -61,7 +59,7 @@ telecommute is higher than the range of those that do not:
 ```{r q1_plot, echo = FALSE}
 
 telework %>%
-  ggplot(aes(y=weekly_earnings, x=(telecommute))) +
+  ggplot(aes(y=weekly_earnings, x=telecommute)) +
   geom_boxplot()
 ```
 
@@ -111,8 +109,39 @@ of the two telecommute categories is apparent:
 ```{r q2_plot, echo = FALSE}
 
 telework %>%
-  ggplot(aes(y=weekly_earnings, x=as.factor(telecommute))) +
+  ggplot(aes(y=weekly_earnings, x=telecommute)) +
   geom_boxplot() + aes(fill = full_or_part_time)
 ```
 
-## Question 3: 
+## Question 3: Simple Regression of Income / Hours Worked
+
+Next is a simple linear regression model for weekly earnings (income) as a 
+function of the number of hours worked.
+
+The general equation for this model is: $$\hat Y = b_{0} + b_{1}X_{i}$$
+
+Incorporating the above variables, the specific form for this model will be:
+$$weekly~earnings_{i} = \beta_{0} + \beta_{1}(hours~worked)$$
+The results of the regression are:
+
+```{r q3_lm, echo = FALSE}
+
+#q3 <- lm(weekly_earnings~hours_worked, data = telework)
+summary(q3_result <- lm(weekly_earnings~hours_worked, data = telework))
+
+
+#telework %>%
+  #ggplot(aes(x=hours_worked, y=weekly_earnings))+
+  #geom_point()+
+  #geom_smooth(method="lm")
+
+```
+
+From this, the specific equation for the model is:
+
+$$weekly~earnings_{i} = {`r (as.numeric(coef(q3_result)[1]))`} + {`r (as.numeric(coef(q3_result)[2]))`}(hours~ worked)$$
+
+
+
+
+
