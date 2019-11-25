@@ -8,10 +8,10 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#options(scipen = 999)
 ```
 
 ```{r packages, echo=FALSE, include=FALSE}
+library(car)
 library(tidyverse)
 ```
 
@@ -51,7 +51,7 @@ This model suggests that whether or not someone telecommutes has an impact on
 their income. The resulting p-value, being less than 2e-16, tells us that, given
 the confidence level of 95%, there is good certainty that the dependent 
 variable here, weekly earnings, is affected by the status of the dependent 
-variable, the boolean telecommute.
+variable, the boolean telecommute variable.
 
 A boxplot gives graphical represenation that the range of income for those that
 telecommute is higher than the range of those that do not:
@@ -72,6 +72,8 @@ act of telecommuting is likely not in itself a driver of higher income.
 of influence between these two selected variables. In this case, what is
 more likely is that the type of occupation one has where telecommuting is an
 option may drive higher income. 
+
+---
 
 ## Question 2: Telecommuting, Income, and Full or Part-Time Status
 
@@ -113,6 +115,8 @@ telework %>%
   geom_boxplot() + aes(fill = full_or_part_time)
 ```
 
+---
+
 ## Question 3: Simple Regression of Income / Hours Worked
 
 Next is a simple linear regression model for weekly earnings (income) as a 
@@ -129,19 +133,193 @@ The results of the regression are:
 #q3 <- lm(weekly_earnings~hours_worked, data = telework)
 summary(q3_result <- lm(weekly_earnings~hours_worked, data = telework))
 
-
-#telework %>%
-  #ggplot(aes(x=hours_worked, y=weekly_earnings))+
-  #geom_point()+
-  #geom_smooth(method="lm")
-
 ```
 
 From this, the specific equation for the model is:
 
 $$weekly~earnings_{i} = {`r (as.numeric(coef(q3_result)[1]))`} + {`r (as.numeric(coef(q3_result)[2]))`}(hours~ worked)$$
+This is a naive model for several reasons:
+<ol>
+<li>While hours worked may have influence on weekly earnings given comparable
+circumstances (same job, same industry), hours worked alone does not have
+significant influence on income.</li>
+<li>Hours worked is also likely a function of full-time or part-time status, as
+one who works full-time is also likely to have a higher number of hours worked.
+</li>
+<li>The affect of hourly or non-hourly status also likely has a strong influence
+on hours worked. Non-hourly (salaried) employees are typically in positions of 
+management or professional occupations. They may work near 40 hours a week, but
+make significantly higher income.</li>
+</ol>
+
+D. Using only these two variables, this is not a helpful model. The above stated
+affect of hourly and non-hourly employment certainly should be considered. We 
+should expect that the hours worked would have a greater influence on hourly 
+workers than non-hourly.
+
+With only the two variables of income and weekly earnings, the model appears as:
+
+```{r q3_plot, echo = FALSE}
+telework %>%
+  ggplot(aes(x=hours_worked, y=weekly_earnings))+
+ geom_point()+
+ geom_smooth(method="lm")
+```
+
+However, when accounting for the hourly/non-hourly status, the models show
+that hours worked appears to have a more correlated impact on weekly earnings.
+In the graphs below, the slimmer scope of the shaded area of the left 
+visualization (hourly) as compared to the right (non-hourly) shows that these 
+categories are affected differently by the hourly/non-hourly status.
+
+```{r q3_adjusted, echo = FALSE}
+telework %>%
+    ggplot(aes(x=hours_worked, y=weekly_earnings, color = hourly_non_hourly))+
+    geom_point()+
+    facet_wrap(telework$hourly_non_hourly) +
+    geom_smooth(method="lm")
+```
+
+---
+
+## Question 4: Simple Regression of Income / Age
+
+Next is a simple linear regression model for weekly earnings (income) as a 
+function of age.
+
+The general equation for the model is: $$\hat Y = b_{0} + b_{1}X_{i}$$
+
+Incorporating the above variables, the specific form for this model will be:
+$$weekly~earnings_{i} = \beta_{0} + \beta_{1}(age)$$
 
 
+
+```{r q4_lm, echo = FALSE}
+q4_result <- lm(weekly_earnings~age, data = telework)
+```
+These results provide estimated form of the regression as:
+$$weekly~earnings_{i} = 548.9457 + 9.1941(age)$$
+
+This model is naive for several reasons:
+<ol>
+<li>This model may account for the increasing income an employee would 
+experience with age, but it ignores factors of how much work is done such as
+part-time/full-time status, hours worked, and hourly/non-hourly status.</li>
+<li>There are likely large influences in earning based on geographic location, 
+e.g. a 50-year-old in California with the same occupation as a 50-yearl-old in 
+Wyoming likely has much higher earnings.</li>
+<li>Other demographic information such as sex and citizenship are not accounted
+for in this model.</li>
+</ol>
+
+Testing the linearity assumptions of this model can start with the summary of
+the linear model:
+
+```{r q4_summary, echo = FALSE}
+summary(q4_result)
+```
+
+These results show deficiences with the model:
+<ol>
+<li>The R-Squared is very low at .03696, suggesting the model is not a good fit.
+</li>
+<li>The residual standard error is significant. At 654.6, this shows a wide
+variability in the residuals, likely caused by a number of outliers.</li>
+</ol>
+
+Another test is to visualize the residuals against the fitted values: 
+
+```{r q4_plot, echo = FALSE}
+
+plot(q4_result, 1)
+
+```
+
+
+From this plot, the curve of the line shows there is not a good fit betwen the
+fitted values and the residuals.
+
+E. Other concerns become apparent looking at the plot of this model:
+
+```{r q4_visualization, echo = FALSE}
+telework %>%
+  ggplot(aes(x=age, y=weekly_earnings)) +
+    geom_point()+
+    geom_smooth(method="lm")
+
+```
+
+
+From this graph, several concerns are apparent:
+<ol>
+<li>There appears to be a cap or placeholder value for weekly earnings at 
+around $2800. Surely some employees make more than this amount. The use of a
+placeholder or a cap is skewing the data towards that value. Data should be 
+collected for all income levels, or this placeholder should be removed and 
+accounted for in a model</li>
+<li>There is no data between the ages of 80 and about 85. Every other age is
+represented. The data is therefore skewed away from this range. If data is not
+available for this range, the best solution would be to remove or filter out
+the data for employees at age 85 and qualify the data as only up to 80.</li>
+</ol>
+
+---
+
+## Question 5: Linearity with Multiple Variables
+
+This final model will be a regression of weekly earnings with the following 
+variables:
+<ul>
+<li>X <sub>1</sub> = age</li>
+<li>X <sub>2</sub> = sex</li>
+<li>X <sub>3</sub> = full-time/part-time status</li>
+<li>X <sub>4</sub> = hourly/non-hourly status</li>
+</ul>
+
+The regression equation is:
+$$\hat Y = \beta_0 + \beta_1X_1 + \beta_2X_2 + \beta_3X_3 + \beta_4X_4$$
+```{r q5_lm, echo = FALSE}
+q5_result <- lm(weekly_earnings~age + sex + full_or_part_time +
+                  hourly_non_hourly, data = telework)
+```
+
+The results for this model are:
+
+```{r q5_result, echo = FALSE}
+summary(q5_result)
+```
+
+From the results of the regression, the model becomes:
+
+$$weekly\ earnings = 611.7809 + 6.6874(age) - 179.994(sex) - 
+493.1572(full/part\ status) + 479.0939(hourly/nonhourly\ status)$$
+
+There does not appear to be any obvious colinearity, as 
+shown by a variance inflation factors (vif) test where all the
+variables test with a low result:
+
+```{r q5_vif, echo = FALSE}
+vif(q5_result)
+```
+
+A hypothetical observation might be a person who is 40 years old, male, works
+full-time, and is non-hourly. Using this model, the equation for this
+observation would be:
+
+$$611.7809 + 6.6874* age + -179.9994 * sex + -493.1572 * full\_or\_part\_time +
+479.0939 * hourly\_non\_hourly$$
+
+```{r q5_predict, echo = FALSE}
+age <- 40
+sex <- 1
+time <- 2
+hourly <- 2
+
+result <- round(611.7809 + 6.6874*(age) + -179.9994 *(sex) + -493.1572 * time + 
+                  479.0939 * hourly, 2)
+
+```
+The predicted weekly earnings for this observation would be $`r result`.
 
 
 
