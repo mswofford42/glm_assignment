@@ -18,13 +18,13 @@ library(tidyverse)
 
 ```{r data, echo=FALSE, include=FALSE}
 # Import of dataset file
-telework <- read_csv("Telework.csv")
+telework <- read_csv("http://asayanalytics.com/telework_csv")
 ```
 
 ```{r clean, echo=FALSE, include=FALSE}
 # Cleaning of data
 
-# Change state variable to a factor
+# Change state of relevant variables to a factors
 cols <- c("state", "rent_or_own_home", "type_of_home", "education",
           "marital_status", "sex", "citizenship", "full_or_part_time", 
           "hourly_non_hourly", "union_member", "geography_region",
@@ -43,20 +43,22 @@ A simple one-way ANOVA provides these results:
 
 ```{r q1_anova, echo=FALSE}
 # Question 1: ANOVA to measure weekly earnings as telecommute changes
+
 q1 <- aov(weekly_earnings~telecommute, data = telework)
 q1_result <- summary(q1)
 print(q1_result)
 ```
-This model suggests that whether or not someone telecommutes has an impact on 
+A. This model suggests that whether or not someone telecommutes has an impact on 
 their income. The resulting p-value, being less than 2e-16, tells us that, given
 the confidence level of 95%, there is good certainty that the dependent 
 variable here, weekly earnings, is affected by the status of the dependent 
 variable, the boolean telecommute variable.
 
-A boxplot gives graphical represenation that the range of income for those that
-telecommute is higher than the range of those that do not:
+B. A boxplot gives graphical represenation that the range of income for those 
+that telecommute is higher than the range of those that do not:
 
 ```{r q1_plot, echo = FALSE}
+# Boxplot of weekly_earning, telecommute
 
 telework %>%
   ggplot(aes(y=weekly_earnings, x=telecommute)) +
@@ -64,7 +66,7 @@ telework %>%
 ```
 
 
-However, this should be considered a naive model for a couple of reasons:
+C. This should be considered a naive model for a couple of reasons:
 
 1) Correlation between the variables should not imply causation. Logically, the
 act of telecommuting is likely not in itself a driver of higher income. 
@@ -90,30 +92,49 @@ q2 <- aov(weekly_earnings~telecommute+full_or_part_time,
           data = telework)
 summary(q2)
 ```
-In this model, both variables show significance, as the p-values in the above 
+
+A. There is logic to this model, as one would assume that holding full-time 
+employment would have a direct influence on an increase in income, while a 
+part-time worker would likely have a compartively lower income. 
+
+
+B. In this model, both variables show significance, as the p-values in the above 
 results are both very low. I.e. both telecommute status and full or part-time 
 status show a correlation to income. 
 
-There is logic to this model, as one would assume that holding full-time 
-employment would have a direct influence on an increase in income, while a 
-part-time worker would likely have a compartively lower income. 
 
 Concerning the telecommute status, however, there may still be some correllation
 to income, but this is likely mediated by the full-time/part-time status
 variable. If that is the case, then this model still shows some naievety as
 there is multicollinearity between the variables.
 
-A boxplot of this model shows the similarities in the range variancess for
+C. A boxplot of this model shows the similarities in the range variancess for
 those that telecommute and those that do not. While weekly earning are higher
 for full-time workers that telecommute, the similar dynamic between the ranges
 of the two telecommute categories is apparent:
 
 ```{r q2_plot, echo = FALSE}
+# Plot of weekly_earnings and telecommute, sepearted by full/part time status.
 
 telework %>%
   ggplot(aes(y=weekly_earnings, x=telecommute)) +
   geom_boxplot() + aes(fill = full_or_part_time)
 ```
+
+D. Comparing the first model with only telecommute as a variable to this model
+that includes full or part time status, this new model appears to be a better 
+fit:
+
+```{r q2_anova_comp, echo = FALSE}
+# Comparison of ANOVAs from question 1 and question 2
+
+q1_anova <- aov(weekly_earnings~telecommute, data = telework)
+summary(q1_anova)
+summary(q2)
+```
+The comparison between these ANOVA results shows that the low p-values and the
+sum of squares indicates a greater fit with the additional variable.
+
 
 ---
 
@@ -122,23 +143,23 @@ telework %>%
 Next is a simple linear regression model for weekly earnings (income) as a 
 function of the number of hours worked.
 
-The general equation for this model is: $$\hat Y = b_{0} + b_{1}X_{i}$$
+A. The general equation for this model is: $$\hat Y = b_{0} + b_{1}X_{i}$$
 
-Incorporating the above variables, the specific form for this model will be:
+B. Incorporating the above variables, the specific form for this model will be:
 $$weekly~earnings_{i} = \beta_{0} + \beta_{1}(hours~worked)$$
 The results of the regression are:
 
 ```{r q3_lm, echo = FALSE}
+# Linear model of weekly_earnings and hours_worked
 
-#q3 <- lm(weekly_earnings~hours_worked, data = telework)
 summary(q3_result <- lm(weekly_earnings~hours_worked, data = telework))
-
 ```
 
 From this, the specific equation for the model is:
 
-$$weekly~earnings_{i} = {`r (as.numeric(coef(q3_result)[1]))`} + {`r (as.numeric(coef(q3_result)[2]))`}(hours~ worked)$$
-This is a naive model for several reasons:
+$$weekly~earnings_{i} = {`r (as.numeric(coef(q3_result)[1]))`} + 
+{`r (as.numeric(coef(q3_result)[2]))`}(hours~ worked)$$
+C. This is a naive model for several reasons:
 <ol>
 <li>While hours worked may have influence on weekly earnings given comparable
 circumstances (same job, same industry), hours worked alone does not have
@@ -160,19 +181,24 @@ workers than non-hourly.
 With only the two variables of income and weekly earnings, the model appears as:
 
 ```{r q3_plot, echo = FALSE}
+# Plot of weekly_earnings and hours_worked linear model
+
 telework %>%
   ggplot(aes(x=hours_worked, y=weekly_earnings))+
  geom_point()+
  geom_smooth(method="lm")
 ```
 
-However, when accounting for the hourly/non-hourly status, the models show
+E. However, when accounting for the hourly/non-hourly status, the models show
 that hours worked appears to have a more correlated impact on weekly earnings.
 In the graphs below, the slimmer scope of the shaded area of the left 
 visualization (hourly) as compared to the right (non-hourly) shows that these 
 categories are affected differently by the hourly/non-hourly status.
 
 ```{r q3_adjusted, echo = FALSE}
+# Plot of weekly_earnings and hours worked linear model, shown by 
+# hourly_non_hourly status.
+
 telework %>%
     ggplot(aes(x=hours_worked, y=weekly_earnings, color = hourly_non_hourly))+
     geom_point()+
@@ -187,20 +213,22 @@ telework %>%
 Next is a simple linear regression model for weekly earnings (income) as a 
 function of age.
 
-The general equation for the model is: $$\hat Y = b_{0} + b_{1}X_{i}$$
+A. The general equation for the model is: $$\hat Y = b_{0} + b_{1}X_{i}$$
 
-Incorporating the above variables, the specific form for this model will be:
+B. Incorporating the above variables, the specific form for this model will be:
 $$weekly~earnings_{i} = \beta_{0} + \beta_{1}(age)$$
 
 
 
 ```{r q4_lm, echo = FALSE}
+# Linear model of weekly_earnings and age
+
 q4_result <- lm(weekly_earnings~age, data = telework)
 ```
 These results provide estimated form of the regression as:
 $$weekly~earnings_{i} = 548.9457 + 9.1941(age)$$
 
-This model is naive for several reasons:
+C. This model is naive for several reasons:
 <ol>
 <li>This model may account for the increasing income an employee would 
 experience with age, but it ignores factors of how much work is done such as
@@ -212,10 +240,12 @@ Wyoming likely has much higher earnings.</li>
 for in this model.</li>
 </ol>
 
-Testing the linearity assumptions of this model can start with the summary of
+D. Testing the linearity assumptions of this model can start with the summary of
 the linear model:
 
 ```{r q4_summary, echo = FALSE}
+# Show summary stats of linear model
+
 summary(q4_result)
 ```
 
@@ -230,9 +260,9 @@ variability in the residuals, likely caused by a number of outliers.</li>
 Another test is to visualize the residuals against the fitted values: 
 
 ```{r q4_plot, echo = FALSE}
+# Residual plot of linear model
 
 plot(q4_result, 1)
-
 ```
 
 
@@ -242,11 +272,12 @@ fitted values and the residuals.
 E. Other concerns become apparent looking at the plot of this model:
 
 ```{r q4_visualization, echo = FALSE}
+# Plot of weekly_earnings and age linear model
+
 telework %>%
   ggplot(aes(x=age, y=weekly_earnings)) +
     geom_point()+
     geom_smooth(method="lm")
-
 ```
 
 
@@ -276,9 +307,12 @@ variables:
 <li>X <sub>4</sub> = hourly/non-hourly status</li>
 </ul>
 
-The regression equation is:
+A. The regression equation is:
 $$\hat Y = \beta_0 + \beta_1X_1 + \beta_2X_2 + \beta_3X_3 + \beta_4X_4$$
 ```{r q5_lm, echo = FALSE}
+# Linear model of weekly_earnings, age, sex, full_or_part_time and 
+# hourly_or_non_hourly
+
 q5_result <- lm(weekly_earnings~age + sex + full_or_part_time +
                   hourly_non_hourly, data = telework)
 ```
@@ -286,23 +320,36 @@ q5_result <- lm(weekly_earnings~age + sex + full_or_part_time +
 The results for this model are:
 
 ```{r q5_result, echo = FALSE}
+# Summary stats of linear model
+
 summary(q5_result)
 ```
 
-From the results of the regression, the model becomes:
+B. From the results of the regression, the model becomes:
 
 $$weekly\ earnings = 611.7809 + 6.6874(age) - 179.994(sex) - 
 493.1572(full/part\ status) + 479.0939(hourly/nonhourly\ status)$$
 
-There does not appear to be any obvious colinearity, as 
+C. There does not appear to be any obvious colinearity, as 
 shown by a variance inflation factors (vif) test where all the
 variables test with a low result:
 
 ```{r q5_vif, echo = FALSE}
+# Varirance inflaction factors of linear model to test colinearity
+
 vif(q5_result)
 ```
+D. The best ranges to use for the variables can be computed using the confidence
+intervals from the linear model:
 
-A hypothetical observation might be a person who is 40 years old, male, works
+```{r q5_confint, echo = FALSE}
+# Compute confidence intervals for linear model
+
+ranges <- confint(q5_result)
+print(ranges)
+```
+
+E. A hypothetical observation might be a person who is 40 years old, male, works
 full-time, and is non-hourly. Using this model, the equation for this
 observation would be:
 
@@ -310,16 +357,27 @@ $$611.7809 + 6.6874* age + -179.9994 * sex + -493.1572 * full\_or\_part\_time +
 479.0939 * hourly\_non\_hourly$$
 
 ```{r q5_predict, echo = FALSE}
+# Define hypothetical observation variables
+
 age <- 40
 sex <- 1
 time <- 2
 hourly <- 2
 
+# Calculate result of hypothetical observation
 result <- round(611.7809 + 6.6874*(age) + -179.9994 *(sex) + -493.1572 * time + 
                   479.0939 * hourly, 2)
 
+# Calculate results of hypothetical observation using confidence intervals
+upper <- round(ranges[1, 1] + (ranges[2, 1]* age) + (ranges[3, 1] * sex) + 
+  (ranges[4, 1] * time) + (ranges[5, 1] * hourly), 2)
+
+lower <- round(ranges[1, 2] + (ranges[2, 2]* age) + (ranges[3, 2] * sex) + 
+  (ranges[4, 2] * time) + (ranges[5, 2] * hourly), 2)
 ```
-The predicted weekly earnings for this observation would be $`r result`.
 
+From this model, the predicted weekly earnings for this observation would be 
+**$`r result`**.
 
-
+Using the ranges above, the weekly earnings lower limit would be **$`r lower`**
+and the upper limit would be **$`r upper`**.
